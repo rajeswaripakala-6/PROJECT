@@ -88,28 +88,13 @@ CALL AddHotelReservation(
     2
 );
 DELIMITER //
-CREATE TRIGGER prevent_double_booking
+CREATE TRIGGER set_default_payment_status
 BEFORE INSERT ON hotel_reservations
 FOR EACH ROW
 BEGIN
-    DECLARE room_conflict INT;
-
-    SELECT COUNT(*) INTO room_conflict
-    FROM hotel_reservations
-    WHERE room_number = NEW.room_number
-      AND (
-          (NEW.check_in_date BETWEEN check_in_date AND check_out_date)
-          OR
-          (NEW.check_out_date BETWEEN check_in_date AND check_out_date)
-          OR
-          (check_in_date BETWEEN NEW.check_in_date AND NEW.check_out_date)
-      );
-
-    IF room_conflict > 0 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Room is already booked for the selected dates';
+    IF NEW.payment_status IS NULL THEN
+        SET NEW.payment_status = 'Pending';
     END IF;
 END;
 //
-
 DELIMITER ;
